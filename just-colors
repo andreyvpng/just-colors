@@ -22,6 +22,21 @@ EOF
    exit $EXIT_ERROR
 }
 
+print_log() {
+  local status=$1
+  local message=$2
+
+  local RED="\e[38;5;1m"
+  local GREEN="\e[38;5;2m"
+  local NORMAL="\E(B\E[m"
+
+  if [[ $status == "ok" ]]; then
+    echo -e "[${GREEN}OK${NORMAL}] $message"
+  elif [[ $status == "error" ]]; then
+    echo -e "[${RED}ERROR${NORMAL}] $message"
+  fi
+}
+
 parse_theme() {
   # Parse the theme file and
   # assigning bash values from the 
@@ -128,7 +143,7 @@ apply_theme() {
   else
     $CACHE_PATH/tty.sh
   fi
-  echo The theme applied
+  print_log ok "The theme applied"
 }
 
 
@@ -151,8 +166,8 @@ main() {
         shift
         break;;
       -*|--*=) # unsupported flags
-        echo "Error: Unsupported flag $1" >&2
-        exit EXIT_ERROR;;
+        print_log error "Unsupported flag $1" >&2
+        exit $EXIT_ERROR;;
       *) # preserve positional arguments
         shift;;
     esac
@@ -164,7 +179,7 @@ main() {
   elif [ -z "${THEME}" ]; then
     usage
   elif ! [ -s "$THEMES_PATH/$THEME.$THEME_EXT" ]; then
-    echo "This theme is not exist"
+    print_log error "This theme is not exist"
     exit $EXIT_ERROR
   fi
 
