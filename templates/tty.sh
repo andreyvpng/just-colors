@@ -2,24 +2,30 @@
 
 # based base16-shell (https://github.com/chriskempson/base16-shell)
 
-color00="{color0.red}/{color0.green}/{color0.blue}"
-color01="{color1.red}/{color1.green}/{color1.blue}"
-color02="{color2.red}/{color2.green}/{color2.blue}"
-color03="{color3.red}/{color3.green}/{color3.blue}"
-color04="{color4.red}/{color4.green}/{color4.blue}"
-color05="{color5.red}/{color5.green}/{color5.blue}"
-color06="{color6.red}/{color6.green}/{color6.blue}"
-color07="{color7.red}/{color7.green}/{color7.blue}"
-color08="{color8.red}/{color8.green}/{color8.blue}"
-color09="{color9.red}/{color9.green}/{color9.blue}"
-color10="{color10.red}/{color10.green}/{color10.blue}"
-color11="{color11.red}/{color11.green}/{color11.blue}"
-color12="{color12.red}/{color12.green}/{color12.blue}"
-color13="{color13.red}/{color13.green}/{color13.blue}"
-color14="{color14.red}/{color14.green}/{color14.blue}"
-color15="{color15.red}/{color15.green}/{color15.blue}"
-color_foreground="{foreground.red}/{foreground.green}/{foreground.blue}"
-color_background="{background.red}/{background.green}/{background.blue}"
+color00="{{base00-hex-r}}/{{base00-hex-g}}/{{base00-hex-b}}" # Base 00 - Black
+color01="{{base08-hex-r}}/{{base08-hex-g}}/{{base08-hex-b}}" # Base 08 - Red
+color02="{{base0B-hex-r}}/{{base0B-hex-g}}/{{base0B-hex-b}}" # Base 0B - Green
+color03="{{base0A-hex-r}}/{{base0A-hex-g}}/{{base0A-hex-b}}" # Base 0A - Yellow
+color04="{{base0D-hex-r}}/{{base0D-hex-g}}/{{base0D-hex-b}}" # Base 0D - Blue
+color05="{{base0E-hex-r}}/{{base0E-hex-g}}/{{base0E-hex-b}}" # Base 0E - Magenta
+color06="{{base0C-hex-r}}/{{base0C-hex-g}}/{{base0C-hex-b}}" # Base 0C - Cyan
+color07="{{base05-hex-r}}/{{base05-hex-g}}/{{base05-hex-b}}" # Base 05 - White
+color08="{{base03-hex-r}}/{{base03-hex-g}}/{{base03-hex-b}}" # Base 03 - Bright Black
+color09=$color01 # Base 08 - Bright Red
+color10=$color02 # Base 0B - Bright Green
+color11=$color03 # Base 0A - Bright Yellow
+color12=$color04 # Base 0D - Bright Blue
+color13=$color05 # Base 0E - Bright Magenta
+color14=$color06 # Base 0C - Bright Cyan
+color15="{{base07-hex-r}}/{{base07-hex-g}}/{{base07-hex-b}}" # Base 07 - Bright White
+color16="{{base09-hex-r}}/{{base09-hex-g}}/{{base09-hex-b}}" # Base 09
+color17="{{base0F-hex-r}}/{{base0F-hex-g}}/{{base0F-hex-b}}" # Base 0F
+color18="{{base01-hex-r}}/{{base01-hex-g}}/{{base01-hex-b}}" # Base 01
+color19="{{base02-hex-r}}/{{base02-hex-g}}/{{base02-hex-b}}" # Base 02
+color20="{{base04-hex-r}}/{{base04-hex-g}}/{{base04-hex-b}}" # Base 04
+color21="{{base06-hex-r}}/{{base06-hex-g}}/{{base06-hex-b}}" # Base 06
+color_foreground="{{base05-hex-r}}/{{base05-hex-g}}/{{base05-hex-b}}" # Base 05
+color_background="{{base00-hex-r}}/{{base00-hex-g}}/{{base00-hex-b}}" # Base 00
 
 if [ -n "$TMUX" ]; then
   # Tell tmux to pass the escape sequences through
@@ -71,13 +77,13 @@ put_template 21 $color21
 # foreground / background / cursor color
 if [ -n "$ITERM_SESSION_ID" ]; then
   # iTerm2 proprietary escape codes
-  put_template_custom Pg {foreground.strip} # foreground
-  put_template_custom Ph {background.strip} # background
-  put_template_custom Pi {foreground.strip} # bold color
-  put_template_custom Pj {color05.strip} # selection color
-  put_template_custom Pk {foreground.strip} # selected text color
-  put_template_custom Pl {cursor.strip} # cursor
-  put_template_custom Pm {backgroud.strip} # cursor text
+  put_template_custom Pg {{base05-hex}} # foreground
+  put_template_custom Ph {{base00-hex}} # background
+  put_template_custom Pi {{base05-hex}} # bold color
+  put_template_custom Pj {{base02-hex}} # selection color
+  put_template_custom Pk {{base05-hex}} # selected text color
+  put_template_custom Pl {{base05-hex}} # cursor
+  put_template_custom Pm {{base00-hex}} # cursor text
 else
   put_template_var 10 $color_foreground
   if [ "$BASE16_SHELL_SET_BACKGROUND" != false ]; then
