@@ -123,6 +123,17 @@ get_color_byte() {
   esac
 }
 
+convert_16_to_10_base() {
+  # $1          number in 16 base
+  #
+  local number=$1
+  echo "ibase=16; $number" | bc
+}
+
+floating_point_division() {
+  echo 0$(bc -l <<< "$1 / $2")
+}
+
 get_color_value() {
   # Echo value of color
   #
@@ -138,11 +149,20 @@ get_color_value() {
   local format=$(echo $postfix | egrep -o '(hex|rgb|dec)')
   local mod=$(echo $postfix | egrep -o '\-[A-Za-z]{1,}$' | sed 's/-//g')
 
-  if [[ $format == "hex" ]]; then
-    get_color_byte $color $mod
-  elif [[ $format == "rgb" ]]; then
-    echo "ibase=16; $(get_color_byte $color $mod)" | bc
-  fi
+  case $format in
+    "hex")
+      if [[ $mod == "bgr" ]]; then
+        echo "$(get_color_byte $color b)$(get_color_byte $color g)$(get_color_byte $color r)"
+      else
+        get_color_byte $color $mod
+      fi;;
+    "rgb")
+      convert_16_to_10_base $(get_color_byte $color $mod);;
+    "dec")
+      floating_point_division  \
+        $(convert_16_to_10_base $(get_color_byte $color $mod)) \
+        255;;
+  esac
 }
 
 apply_theme() {
