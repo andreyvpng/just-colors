@@ -32,7 +32,7 @@ run command:
 just-colors --theme default-dark
 ```
 
-This generate configurations for tty and Xresorces with default-dark theme (in ~/config/just-colors/cache), also you can add own themes and templates
+This generate configurations for tty and Xresorces with default-dark theme (in ~/.config/just-colors/cache), also you can add own themes and templates
 
 # Apply theme
 
@@ -48,4 +48,8 @@ For Xresources, add in your ~/.xinitrc this line
 xrdb -merge -quiet -I$HOME ~/.config/just-colors/cache/colors.Xresources
 ```
 
+For qutebrowser, you can use [this](https://gist.github.com/andreyvpng/62291eee5df64fb700b33f66eb2ec0ed) solution
+
 For GTK, you can use [Oomox](https://github.com/themix-project/oomox). Oomox generates GTK theme using Xresources
+
+If you have not found a solution for your favorite program, you can solve it yourself by creating a new template (in ~/.config/just-colors/templates/)
