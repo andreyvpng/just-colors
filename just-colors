@@ -108,6 +108,21 @@ is_color() {
   fi
 }
 
+get_color_byte() {
+  # $1            color
+  # $2            color type r|g|b
+  #
+  local color=$1
+  local color_type=$2
+
+  case $color_type in
+    r)  echo $color | cut -c1-2;;
+    g)  echo $color | cut -c3-4;;
+    b)  echo $color | cut -c5-6;;
+    *)  echo $color
+  esac
+}
+
 get_color_value() {
   # Echo value of color
   #
@@ -124,15 +139,9 @@ get_color_value() {
   local mod=$(echo $postfix | egrep -o '\-[A-Za-z]{1,}$' | sed 's/-//g')
 
   if [[ $format == "hex" ]]; then
-    if [[ $mod == "r" ]]; then
-      echo $color | cut -c1-2
-    elif [[ $mod == "g" ]]; then
-      echo $color | cut -c3-4
-    elif [[ $mod == "b" ]]; then
-      echo $color | cut -c5-6
-    else
-      echo $color
-    fi
+    get_color_byte $color $mod
+  elif [[ $format == "rgb" ]]; then
+    echo "ibase=16; $(get_color_byte $color $mod)" | bc
   fi
 }
 
