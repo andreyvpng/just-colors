@@ -17,6 +17,15 @@ ln -s $HOME/.config/just-colors/just-colors /bin/just-colors
 
 # Usage
 
+```
+usage: just-colors [options]
+
+  Options:
+    --theme [name of theme]
+    --no-apply
+    --reload
+```
+
 run command:
 
 ```bash
