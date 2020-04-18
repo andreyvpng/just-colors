@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+
+PATH_PREFIX=$HOME/.config/just-colors
+CACHE_PATH=$PATH_PREFIX/cache
+TEMPLATE_PATH=$PATH_PREFIX/template
+THEMES_PATH=$PATH_PREFIX/themes
+THEME_EXT=yaml
+VAR_PREFIX=TEMPLATE_VAR_
+EXIT_ERROR=1
+EXIT_OK=0
+
+usage() {
+  cat <<EOF
+usage: just-colors [options]
+
+  Options:
+    --theme [name of theme]
+    --no-apply
+    --reload
+
+EOF
+   exit $EXIT_ERROR
+}
+
+parse_theme() {
+  # Parse the theme file and
+  # assigning bash values from the 
+  # yaml file fields to variables,
+  # respectively
+  #
+  # $1            theme file
+  #
+  local theme=$1
+  local fields=$(egrep -o "^([0-9a-zA-Z])\w+: \"([0-9a-zA-Z#])\w+\"$" $theme)
+
+  local field_for_initialize=""
+  for field in $fields; do
+    if [[ $field_for_initialize == "" ]]; then
+      field_for_initialize=$(echo $field | sed 's/://g')
+      continue
+    fi
+
+    local value=$field
+    eval $VAR_PREFIX$field_for_initialize=$value
+    field_for_initialize=""
+  done 
+}
+
+get_value() {
+  # Get the field value from 
+  # the theme file
+  #
+  # $1        name_of_field
+  #
+  local name_of_variable=${VAR_PREFIX}${1}
+  echo ${!name_of_variable}
+}
+
+parse_template() {
+  # Get all matches from the
+  # template file in the pattern.
+  #
+  # $1        template file
+  #
+  local template=$1
+  local matches=$(egrep -o "\{([0-9a-zA-Z.]){1,}\}" $template)
+  matches=$(echo $matches| sed 's/[\{\}]//g')
+  echo $matches
+}
+
+insert_into_template() {
+  # Insert into template
+  #
+  # $1        pattern
+  # $2        replacement string
+  # $3        file path
+  #
+  local pattern=$1
+  local replacement_string=$2
+  local file_path=$3
+  exp=s/$pattern/$replacement_string/g
+  sed -i -e "${exp}" $file_path
+}
+
+is_color() {
+  # Is this color value?
+  #
+  # $1        variable
+  #
+  local variable=$1
+  local variable_after_regex=$(echo $variable | egrep -o "#([0-9A-Fa-f]{6})")
+  if [[ $variable == $variable_after_regex ]]; then
+    echo "1"
+  fi
+}
+
+get_color_value() {
+  # Echo value of color
+  #
+  # $1            color
+  # optional:
+  # $2            defines the format
+  #   - if $2 is empty
+  #       echo hex
+  #   - if $2 is red|green|blue
+  #       echo rr|gg|bb
+  #   - if $2 is strip
+  #       echo hex without #
+  #
+  local color=$1
+  local format=$2
+  if [[ $format == "red" ]]; then
+    echo $color | cut -c2-3
+  elif [[ $format == "green" ]]; then
+    echo $color | cut -c4-5
+  elif [[ $format == "blue" ]]; then
+    echo $color | cut -c6-7
+  elif [[ $format == "strip" ]]; then
+    echo $color | cut -c2-7
+  else
+    echo $color
+  fi
+}
+
+apply_theme() {
+  if [[ $DISPLAY != "" ]]; then
+    xrdb -merge -quiet $CACHE_PATH/colors.Xresources
+  else
+    $CACHE_PATH/tty.sh
+  fi
+  echo The theme applied
+}
+
+
+main() {
+  while (( "$#" )); do
+    case "$1" in
+      -t|--theme)
+        THEME=$2
+        shift 2
+        ;;
+      --no-apply)
+        NO_APPLY=1
+        shift 1
+        ;;
+      --reload)
+        RELOAD=0
+        shift 1
+        ;;
+      --) # end argument parsing
+        shift
+        break;;
+      -*|--*=) # unsupported flags
+        echo "Error: Unsupported flag $1" >&2
+        exit EXIT_ERROR;;
+      *) # preserve positional arguments
+        shift;;
+    esac
+  done
+
+  if [ -z "${THEME}" ] && [ "${RELOAD}" ]; then
+    apply_theme
+    exit $EXIT_OK
+  elif [ -z "${THEME}" ]; then
+    usage
+  elif ! [ -s "$THEMES_PATH/$THEME.$THEME_EXT" ]; then
+    echo "This theme is not exist"
+    exit $EXIT_ERROR
+  fi
+
+  parse_theme $THEMES_PATH/$THEME.$THEME_EXT
+
+  for template in $TEMPLATE_PATH/*; do
+
+    cp $template $CACHE_PATH/$(basename $template)
+
+    for match in $(parse_template $template); do
+      match_field=$(echo $match | egrep -o '^[^.]*')
+      match_mod=$(echo $match | egrep -o '[a-z]{1,}$')
+      value=$(get_value $match_field)
+
+      if [[ $(is_color $math_field) ]] && [[ $match_mod != "" ]]; then
+        value=$(get_color_value $value $match_mod)
+      fi
+
+      insert_into_template "{$match}" "$value" \
+                           $CACHE_PATH/$(basename $template)
+    done
+  done
+
+
+  if [ -z "${NO_APPLY}" ]; then
+    apply_theme
+  fi
+}
+
+main "$@"
