@@ -4,7 +4,7 @@
 *.background:       {background}
 URxvt*foreground:   {foreground}
 URxvt*background:   {background}
-URxvt*cursorColor:  {color1}
+URxvt*cursorColor:  {cursor}
 URxvt*borderColor:  {background}
 
 *.color0: {color0}

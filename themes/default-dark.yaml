@@ -1,6 +1,7 @@
+author: "Chris Kempson"
 foreground: "#d0d0d0"
 background: "#151515"
-author: "Chris Kempson"
+cursor: "#ac4142"
 color0: "#151515"
 color1: "#ac4142"
 color2: "#90a959"
