@@ -140,9 +140,8 @@ get_color_value() {
 apply_theme() {
   if [[ $DISPLAY != "" ]]; then
     xrdb -merge -quiet $CACHE_PATH/colors.Xresources
-  else
-    $CACHE_PATH/tty.sh
   fi
+  ($CACHE_PATH/tty.sh &)
   print_log ok "The theme applied"
 }
 
