@@ -19,7 +19,6 @@ usage: just-colors [options]
     --reload
 
 EOF
-   exit $EXIT_ERROR
 }
 
 print_log() {
@@ -172,42 +171,8 @@ apply_theme() {
 }
 
 
-main() {
-  while (( "$#" )); do
-    case "$1" in
-      -t|--theme)
-        THEME=$2
-        shift 2
-        ;;
-      --no-apply)
-        NO_APPLY=1
-        shift 1
-        ;;
-      --reload)
-        RELOAD=0
-        shift 1
-        ;;
-      --) # end argument parsing
-        shift
-        break;;
-      -*|--*=) # unsupported flags
-        print_log error "Unsupported flag $1" >&2
-        exit $EXIT_ERROR;;
-      *) # preserve positional arguments
-        shift;;
-    esac
-  done
-
-  if [ -z "${THEME}" ] && [ "${RELOAD}" ]; then
-    apply_theme
-    exit $EXIT_OK
-  elif [ -z "${THEME}" ]; then
-    usage
-  elif ! [ -s "$THEMES_PATH/$THEME.$THEME_EXT" ]; then
-    print_log error "This theme is not exist"
-    exit $EXIT_ERROR
-  fi
-
+build_all_templates() {
+  THEME=$1
   parse_theme $THEMES_PATH/$THEME.$THEME_EXT
 
   for template in $TEMPLATE_PATH/*; do
@@ -234,4 +199,39 @@ main() {
   fi
 }
 
-main "$@"
+while (( "$#" )); do
+  case "$1" in
+    -t|--theme)
+      THEME=$2
+      shift 2
+      ;;
+    --no-apply)
+      NO_APPLY=1
+      shift 1
+      ;;
+    --reload)
+      RELOAD=0
+      shift 1
+      ;;
+    --) # end argument parsing
+      shift
+      break;;
+    -*|--*=) # unsupported flags
+      print_log error "Unsupported flag $1" >&2;;
+    *) # preserve positional arguments
+      shift;;
+  esac
+done
+
+if [ -z "${THEME}" ] && [ "${RELOAD}" ]; then
+  apply_theme
+elif [ "${THEME}" ]; then
+  if [ -s "$THEMES_PATH/$THEME.$THEME_EXT" ]; then
+    build_all_templates $THEME
+  else
+    print_log error "This theme is not exist"
+    exit $EXIT_ERROR
+  fi
+else
+  usage
+fi
