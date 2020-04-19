@@ -60,6 +60,6 @@ Just Colors using [base16](https://github.com/chriskempson/base16). If you want 
 
 If you need any specific path for some configuration files use links. For example, for zathura
 ```bash
-ln -s /home/andrey/.config/just-colors/cache/zathurarc \
-      /home/andrey/.config/zathura/zathurarc
+ln -s $HOME/.config/just-colors/cache/zathurarc \
+      $HOME/.config/zathura/zathurarc
 ```
