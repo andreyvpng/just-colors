@@ -75,8 +75,12 @@ assert "get_value base0D" $base0D
 assert "get_value base0E" $base0E
 assert "get_value base0F" $base0F
 
-TEST_TEMPLATE_SOLUTION=$PATH_PREFIX/test.solution
+#
+# tests for build_template
+#
+
 TEST_TEMPLATE_INITIALLY=$PATH_PREFIX/test.template
+TEST_TEMPLATE_SOLUTION=$PATH_PREFIX/test.solution
 TEST_TEMPLATE_CACHE=$PATH_PREFIX/test.cache
 
 clean_up

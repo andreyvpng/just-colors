@@ -6,13 +6,12 @@ Just-Colors is easy and lighweight way to change colors
 # Installing
 
 ```bash
-git clone \
-  https://github.com/andreyvpng/just-colors \
+git clone https://github.com/andreyvpng/just-colors \
   ~/.config/just-colors/
 
-chmod +x ~/.config/just-colors/just-colors
+cd ~/.config/just-colors
 
-ln -s $HOME/.config/just-colors/just-colors /bin/just-colors  
+make install
 ```
 
 # Usage
