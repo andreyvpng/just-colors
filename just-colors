@@ -171,32 +171,43 @@ apply_theme() {
 }
 
 
+build_template() {
+  #
+  # $1        path to template
+  # $2        output file
+  #
+
+  template=$1
+  output_file=$2
+
+  cp "$template" "$output_file"
+
+  for match in $(parse_template $template); do
+    match_field=$(echo $match | egrep -o '^[^\-]*')
+    match_mod=$(echo $match | sed s/$match_field-//g)
+
+    value=$(get_value $match_field)
+    if [[ $(is_color $math_field) ]] && [[ $match_mod != "" ]]; then
+      value=$(get_color_value $match_field $match_mod)
+    fi
+
+    insert_into_template "{$match}" "$value" $output_file
+    done
+}
+
+
 build_all_templates() {
+  #
+  # $1        theme name
+  #
   THEME=$1
   parse_theme $THEMES_PATH/$THEME.$THEME_EXT
 
+  mkdir -p $CACHE_PATH
+
   for template in $TEMPLATE_PATH/*; do
-
-    cp $template $CACHE_PATH/$(basename $template)
-
-    for match in $(parse_template $template); do
-      match_field=$(echo $match | egrep -o '^[^\-]*')
-      match_mod=$(echo $match | sed s/$match_field-//g)
-
-      value=$(get_value $match_field)
-      if [[ $(is_color $math_field) ]] && [[ $match_mod != "" ]]; then
-        value=$(get_color_value $match_field $match_mod)
-      fi
-
-      insert_into_template "{$match}" "$value" \
-                           $CACHE_PATH/$(basename $template)
-    done
+    build_template $template "$CACHE_PATH/$(basename $template)"
   done
-
-
-  if [ -z "${NO_APPLY}" ]; then
-    apply_theme
-  fi
 }
 
 while (( "$#" )); do
@@ -228,6 +239,9 @@ if [ -z "${THEME}" ] && [ "${RELOAD}" ]; then
 elif [ "${THEME}" ]; then
   if [ -s "$THEMES_PATH/$THEME.$THEME_EXT" ]; then
     build_all_templates $THEME
+    if [ -z "${NO_APPLY}" ]; then
+      apply_theme
+    fi
   else
     print_log error "This theme is not exist"
     exit $EXIT_ERROR
