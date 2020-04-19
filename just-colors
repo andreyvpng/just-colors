@@ -17,7 +17,7 @@ usage: just-colors [options]
     --theme [name of theme]
     --no-apply
     --reload
-
+    --after [path to script to run after]
 EOF
 }
 
@@ -224,6 +224,10 @@ while (( "$#" )); do
       RELOAD=0
       shift 1
       ;;
+    --after)
+      AFTER=$2
+      shift 2
+      ;;
     --) # end argument parsing
       shift
       break;;
@@ -248,4 +252,8 @@ elif [ "${THEME}" ]; then
   fi
 else
   usage
+fi
+
+if [ "${AFTER}" ]; then
+  $AFTER
 fi
