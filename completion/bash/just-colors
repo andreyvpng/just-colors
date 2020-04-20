@@ -1,0 +1,25 @@
+_just_colors()
+{
+  local cur prev words cword split
+  _init_completion -s || return
+
+  case "$prev" in
+    --theme|-!(-*)T)
+      local conf_path=~/.config/just-colors/themes
+      local themes=$(ls $conf_path | sed "s/\.yaml//g")
+      COMPREPLY+=( $(compgen -W "$themes" -- "$cur") )
+      return
+      ;;
+  esac
+
+  $split && return
+
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=( $(compgen -W '$(_parse_help "$1" --help)' -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+    [[ $COMPREPLY ]] && return
+  fi
+} &&
+complete -F _just_colors just-colors
+
+# ex: filetype=sh
