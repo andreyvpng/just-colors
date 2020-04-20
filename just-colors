@@ -237,7 +237,10 @@ while (( "$#" )); do
       exit $EXIT_OK
       ;;
     -*|--*=) # unsupported flags
-      print_log error "Unsupported flag $1" >&2;;
+      print_log error "Unsupported flag $1" >&2
+      usage
+      exit $EXIT_ERROR
+      ;;
     *) # preserve positional arguments
       shift;;
   esac
