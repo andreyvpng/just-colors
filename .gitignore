@@ -1,3 +1,2 @@
 cache/
-test.solution
-test.cache
+templates_for_test/*.cache

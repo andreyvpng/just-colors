@@ -5,6 +5,8 @@ source ./just-colors &> /dev/null
 TOTAL_TESTS=0
 PASSED_TESTS=0
 
+PATH_TEMPLATES_FOR_TEST=$PATH_PREFIX/templates_for_test
+
 assert() {
   TOTAL_TESTS=`expr $TOTAL_TESTS + 1`
   case $# in
@@ -21,19 +23,8 @@ assert() {
 }
 
 clean_up() {
-  [[ -f "$TEST_TEMPLATE_SOLUTION" ]] && rm $TEST_TEMPLATE_SOLUTION
-  [[ -f "$TEST_TEMPLATE_CACHE" ]] && rm $TEST_TEMPLATE_CACHE
-}
-
-print_template_solution(){
-  cat <<EOF
-This is simple template for test
-
-test all colors in hex: 181818 282828 383838
-585858 b8b8b8 d8d8d8 e8e8e8 f8f8f8
-ab4642 dc9656 f7ca88 a1b56c 86c1b9
-7cafc2 ba8baf a16946
-EOF
+  local files_for_del=$(ls $PATH_TEMPLATES_FOR_TEST/*.cache)
+  [[ "$files_for_del" ]] && rm $files_for_del
 }
 
 base00="181818"
@@ -79,16 +70,12 @@ assert "get_value base0F" $base0F
 # tests for build_template
 #
 
-TEST_TEMPLATE_INITIALLY=$PATH_PREFIX/test.template
-TEST_TEMPLATE_SOLUTION=$PATH_PREFIX/test.solution
-TEST_TEMPLATE_CACHE=$PATH_PREFIX/test.cache
-
-clean_up
-
-print_template_solution >> $TEST_TEMPLATE_SOLUTION
-build_template $TEST_TEMPLATE_INITIALLY $TEST_TEMPLATE_CACHE
-
-assert "diff $TEST_TEMPLATE_SOLUTION $TEST_TEMPLATE_CACHE" ""
+for template in $(ls $PATH_TEMPLATES_FOR_TEST/*.template); do
+  solution=${template%.template}.solution
+  cache=${template%.template}.cache
+  build_template $template $cache
+  assert "diff $solution $cache" ""
+done
 
 clean_up
 
