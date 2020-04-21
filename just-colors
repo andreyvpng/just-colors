@@ -23,47 +23,69 @@ EOF
 }
 
 print_log() {
+  # Print colorize log
+  #
+  # $1          status
+  #             ok|error|warning
+  # $2          message
+  #
   local status=$1
   local message=$2
 
   local RED="\e[38;5;1m"
   local GREEN="\e[38;5;2m"
-  local NORMAL="\E(B\E[m"
+  local YELLOW="\e[38;5;3m"
+  local NORMAL="\e(B\e[m"
 
-  if [[ $status == "ok" ]]; then
-    echo -e "[${GREEN}OK${NORMAL}] $message"
-  elif [[ $status == "error" ]]; then
-    echo -e "[${RED}ERROR${NORMAL}] $message"
-  fi
+  case $status in
+    ok)
+      echo -e "[${GREEN}OK${NORMAL}] $message";;
+    error)
+      echo -e "[${RED}ERROR${NORMAL}] $message";;
+    warning)
+      echo -e "[${YELLOW}WARNING${NORMAL}] $message";;
+  esac
 }
 
 parse_theme() {
-  # Parse the theme file and
-  # assigning bash values from the 
-  # yaml file fields to variables,
-  # respectively
+  # Parse the theme file
   #
   # $1            theme file
   #
+  # The function searches for all matches by regular
+  # expression that matches:
+  # [start_of_line][some word containing a-zA-Z0-9]: [some word containing a-zA-Z0-9#][end of line]
+  # alias,
+  # [variable]: [value]
+  #
+  # Next, the values are assigned to the bash variables using eval
+  # Security using eval is ensured by the following:
+  #   1. data from the theme file is checked using regular expressions
+  #      and cannot run extraneous code
+  #   2. assigned variables using eval do not overlap with other
+  #      script variables due to prefix($VAR_PREFIX)
+  #
   local theme=$1
-  local fields=$(egrep -o "^([0-9a-zA-Z])\w+: \"([0-9a-zA-Z#])\w+\"$" $theme)
+  local fields=$( \
+    egrep -o "^([0-9a-zA-Z])\w+: \"([0-9a-zA-Z#])\w+\"$" $theme)
 
   local field_for_initialize=""
   for field in $fields; do
     if [[ $field_for_initialize == "" ]]; then
-      field_for_initialize=$(echo $field | sed 's/://g')
+      field_for_initialize=$( \
+        echo $field \
+        | sed 's/://g')
       continue
     fi
 
     local value=$field
-    eval $VAR_PREFIX$field_for_initialize=$value
+    eval ${VAR_PREFIX}${field_for_initialize}=${value}
     field_for_initialize=""
-  done 
+  done
 }
 
 get_value() {
-  # Get the field value from 
-  # the theme file
+  # Get the field value from the theme file
   #
   # $1        name_of_field
   #
@@ -78,13 +100,17 @@ parse_template() {
   # $1        template file
   #
   local template=$1
-  local matches=$(egrep -o "\{\{([0-9a-zA-Z-]){1,}\}\}" $template)
-  matches=$(echo $matches| sed 's/[\{\}]//g')
+  local matches=$( \
+    egrep -o "\{\{([0-9a-zA-Z-]){1,}\}\}" $template)
+  matches=$( \
+    echo $matches \
+    | sed 's/[\{\}]//g')
   echo $matches
 }
 
 insert_into_template() {
   # Insert into template
+  # In short, makes replacing the pattern with another string
   #
   # $1        pattern
   # $2        replacement string
@@ -102,7 +128,9 @@ is_color() {
   # $1        variable
   #
   local variable=$1
-  local variable_after_regex=$(echo $variable | egrep -o "([0-9A-Fa-f]{6})")
+  local variable_after_regex=$( \
+    echo $variable \
+    | egrep -o "([0-9A-Fa-f]{6})")
   if [[ $variable == $variable_after_regex ]]; then
     echo "1"
   fi
@@ -110,7 +138,8 @@ is_color() {
 
 get_color_byte() {
   # $1            color
-  # $2            color type r|g|b
+  # $2            color type
+  #               r|g|b
   #
   local color=$1
   local color_type=$2
@@ -146,13 +175,19 @@ get_color_value() {
 
   local color=$(get_value $color_name)
 
-  local format=$(echo $postfix | egrep -o '(hex|rgb|dec)')
-  local mod=$(echo $postfix | egrep -o '\-[A-Za-z]{1,}$' | sed 's/-//g')
+  local format=$( \
+    echo $postfix \
+    | egrep -o '(hex|rgb|dec)')
+
+  local mod=$( \
+    echo $postfix \
+    | egrep -o '\-[A-Za-z]{1,}$' \
+    | sed 's/-//g')
 
   case $format in
     "hex")
       if [[ $mod == "bgr" ]]; then
-        echo "$(get_color_byte $color b)$(get_color_byte $color g)$(get_color_byte $color r)"
+        echo -e "$(get_color_byte $color b)$(get_color_byte $color g)$(get_color_byte $color r)"
       else
         get_color_byte $color $mod
       fi;;
@@ -164,13 +199,6 @@ get_color_value() {
         255;;
   esac
 }
-
-apply_theme() {
-  xrdb -merge -quiet $CACHE_PATH/colors.Xresources
-  ($CACHE_PATH/tty.sh &)
-  print_log ok "The theme applied"
-}
-
 
 build_template() {
   #
@@ -196,7 +224,6 @@ build_template() {
     done
 }
 
-
 build_all_templates() {
   #
   # $1        theme name
@@ -209,6 +236,12 @@ build_all_templates() {
   for template in $TEMPLATE_PATH/*; do
     build_template $template "$CACHE_PATH/$(basename $template)"
   done
+}
+
+apply_theme() {
+  xrdb -merge -quiet $CACHE_PATH/colors.Xresources
+  ($CACHE_PATH/tty.sh &)
+  print_log ok "The theme applied"
 }
 
 while (( "$#" )); do
