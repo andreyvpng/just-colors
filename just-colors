@@ -6,8 +6,6 @@ TEMPLATE_PATH=$PATH_PREFIX/templates
 THEMES_PATH=$PATH_PREFIX/themes
 THEME_EXT=yaml
 VAR_PREFIX=TEMPLATE_VAR_
-EXIT_ERROR=1
-EXIT_OK=0
 
 usage() {
   cat <<EOF
@@ -45,6 +43,11 @@ print_log() {
     warning)
       echo -e "[${YELLOW}WARNING${NORMAL}] $message";;
   esac
+}
+
+_die() {
+  print_log error "$1"
+  exit 1
 }
 
 parse_theme() {
@@ -244,55 +247,59 @@ apply_theme() {
   print_log ok "The theme applied"
 }
 
-while (( "$#" )); do
-  case "$1" in
-    -t|--theme)
-      THEME=$2
-      shift 2
-      ;;
-    --no-apply)
-      NO_APPLY=1
-      shift 1
-      ;;
-    --reload)
-      RELOAD=0
-      shift 1
-      ;;
-    --after)
-      AFTER=$2
-      shift 2
-      ;;
-    --) # end argument parsing
-      shift
-      break;;
-    --help)
-      usage
-      exit $EXIT_OK
-      ;;
-    -*|--*=) # unsupported flags
-      print_log error "Unsupported flag $1" >&2
-      usage
-      exit $EXIT_ERROR
-      ;;
-    *) # preserve positional arguments
-      shift;;
-  esac
-done
+parse_arguments() {
+  while (( "$#" )); do
+    case "$1" in
+      -t|--theme)
+        THEME=$2
+        shift 2
+        ;;
+      --no-apply)
+        NO_APPLY=1
+        shift 1
+        ;;
+      --reload)
+        RELOAD=0
+        shift 1
+        ;;
+      --after)
+        AFTER=$2
+        shift 2
+        ;;
+      --help)
+        HELP=0
+        shift 1
+        ;;
+      --)
+        shift
+        break;;
+      -*|--*=)
+        usage & _die "Unsupported flag $1"
+        ;;
+      *)
+        shift;;
+    esac
+  done
+}
 
-if [ -z "${THEME}" ] && [ "${RELOAD}" ]; then
-  apply_theme
-elif [ "${THEME}" ]; then
-  if [ -s "$THEMES_PATH/$THEME.$THEME_EXT" ]; then
-    build_all_templates $THEME
-    if [ -z "${NO_APPLY}" ]; then
-      apply_theme
-    fi
-  else
-    print_log error "This theme is not exist"
-    exit $EXIT_ERROR
-  fi
-else
+parse_arguments $@
+
+if [ "${HELP}" ]; then
   usage
+  exit 0
+fi
+
+if [ "${THEME}" ]; then
+  [ -s "${THEMES_PATH}/${THEME}.${THEME_EXT}" ] ||
+    _die "This theme is not exist"
+  build_all_templates $THEME
+  if [ -z "${NO_APPLY}" ]; then
+    apply_theme
+  fi
+fi
+
+if [ "${RELOAD}" ]; then
+  apply_theme
 fi
 
 if [ "${AFTER}" ]; then
