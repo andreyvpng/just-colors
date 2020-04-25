@@ -131,9 +131,8 @@ is_color() {
   local variable_after_regex=$( \
     echo $variable \
     | egrep -o "([0-9A-Fa-f]{6})")
-  if [[ $variable == $variable_after_regex ]]; then
-    echo "1"
-  fi
+
+  [[ $variable == $variable_after_regex ]] && echo "1"
 }
 
 get_color_byte() {
@@ -148,7 +147,7 @@ get_color_byte() {
     r)  echo $color | cut -c1-2;;
     g)  echo $color | cut -c3-4;;
     b)  echo $color | cut -c5-6;;
-    *)  echo $color
+    *) echo $color;;
   esac
 }
 
@@ -186,11 +185,12 @@ get_color_value() {
 
   case $format in
     "hex")
-      if [[ $mod == "bgr" ]]; then
-        echo -e "$(get_color_byte $color b)$(get_color_byte $color g)$(get_color_byte $color r)"
-      else
-        get_color_byte $color $mod
-      fi;;
+      case $mod in
+        "bgr")
+          echo "$(get_color_byte $color b)$(get_color_byte $color g)$(get_color_byte $color r)";;
+        *)
+          get_color_byte $color $mod;;
+      esac;;
     "rgb")
       convert_16_to_10_base $(get_color_byte $color $mod);;
     "dec")
