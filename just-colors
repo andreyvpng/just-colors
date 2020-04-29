@@ -37,16 +37,20 @@ print_log() {
 
   case $status in
     ok)
-      echo -e "[${GREEN}OK${NORMAL}] $message";;
+      echo -e "[${GREEN}OK${NORMAL}] $message"
+      ;;
     error)
-      echo -e "[${RED}ERROR${NORMAL}] $message";;
+      echo -e "[${RED}ERROR${NORMAL}] $message"
+      ;;
     warning)
-      echo -e "[${YELLOW}WARNING${NORMAL}] $message";;
+      echo -e "[${YELLOW}WARNING${NORMAL}] $message"
+      ;;
   esac
 }
 
 _die() {
   print_log error "$1"
+
   exit 1
 }
 
@@ -147,9 +151,9 @@ get_color_byte() {
   local color_type=$2
 
   case $color_type in
-    r)  echo $color | cut -c1-2;;
-    g)  echo $color | cut -c3-4;;
-    b)  echo $color | cut -c5-6;;
+    r) echo $color | cut -c1-2;;
+    g) echo $color | cut -c3-4;;
+    b) echo $color | cut -c5-6;;
     *) echo $color;;
   esac
 }
@@ -158,7 +162,7 @@ convert_16_to_10_base() {
   # $1          number in 16 base
   #
   local number=$1
-  echo "ibase=16; $number" | bc
+  echo $(( 16#${number} ))
 }
 
 floating_point_division() {
@@ -172,10 +176,8 @@ get_color_value() {
   # optional:
   # $2            defines the format
   #
-  local color_name=$1
+  local color=$1
   local postfix=$2
-
-  local color=$(get_value $color_name)
 
   local format=$( \
     echo $postfix \
@@ -187,19 +189,36 @@ get_color_value() {
     | sed 's/-//g')
 
   case $format in
-    "hex")
+    hex)
       case $mod in
-        "bgr")
-          echo "$(get_color_byte $color b)$(get_color_byte $color g)$(get_color_byte $color r)";;
-        *)
-          get_color_byte $color $mod;;
-      esac;;
-    "rgb")
-      convert_16_to_10_base $(get_color_byte $color $mod);;
-    "dec")
-      floating_point_division  \
-        $(convert_16_to_10_base $(get_color_byte $color $mod)) \
-        255;;
+        bgr)
+          echo -n "$(get_color_byte $color b)"
+          echo -n "$(get_color_byte $color g)"
+          echo -n "$(get_color_byte $color r)"
+          ;;
+        "r"|"b"|"g"|"")
+          echo "$(get_color_byte $color $mod)"
+          ;;
+      esac
+      ;;
+    rgb)
+      case $mod in
+        "r"|"b"|"g")
+          echo "$(convert_16_to_10_base \
+            $(get_color_byte $color $mod))"
+          ;;
+      esac
+      ;;
+    dec)
+      case $mod in
+        "r"|"b"|"g")
+          echo "$(floating_point_division  \
+            $(convert_16_to_10_base \
+            $(get_color_byte $color $mod)) \
+            255)"
+        ;;
+      esac
+      ;;
   esac
 }
 
@@ -219,12 +238,13 @@ build_template() {
     match_mod=$(echo $match | sed s/$match_field-//g)
 
     value=$(get_value $match_field)
-    if [[ $(is_color $math_field) ]] && [[ $match_mod != "" ]]; then
-      value=$(get_color_value $match_field $match_mod)
-    fi
+
+    [[ $(is_color $value) ]] &&
+      [[ $match_mod != "" ]] &&
+        value=$(get_color_value $value $match_mod)
 
     insert_into_template "{$match}" "$value" $output_file
-    done
+  done
 }
 
 build_all_templates() {
@@ -274,7 +294,7 @@ parse_arguments() {
         shift
         break;;
       -*|--*=)
-        usage & _die "Unsupported flag $1"
+        usage && _die "Unsupported flag $1"
         ;;
       *)
         shift;;
