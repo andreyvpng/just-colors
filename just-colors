@@ -1,11 +1,25 @@
 #!/usr/bin/env bash
 
-PATH_PREFIX=$HOME/.config/just-colors
-CACHE_PATH=$PATH_PREFIX/cache
-TEMPLATE_PATH=$PATH_PREFIX/templates
-THEMES_PATH=$PATH_PREFIX/themes
-THEME_EXT=yaml
-VAR_PREFIX=TEMPLATE_VAR_
+set -o nounset
+set -o errexit
+
+readonly PATH_PREFIX=$HOME/.config/just-colors
+readonly CACHE_PATH=$PATH_PREFIX/cache
+readonly TEMPLATE_PATH=$PATH_PREFIX/templates
+readonly THEMES_PATH=$PATH_PREFIX/themes
+readonly THEME_EXT=yaml
+readonly VAR_PREFIX=TEMPLATE_VAR_
+readonly OK=0
+readonly FAIL=1
+
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly CYAN='\033[0;36m'
+readonly NORMAL='\033[0m'
+
+THEME_PATH=
+DEBUG=$FAIL
 
 usage() {
   cat <<EOF
@@ -30,28 +44,17 @@ print_log() {
   local status=$1
   local message=$2
 
-  local RED="\e[38;5;1m"
-  local GREEN="\e[38;5;2m"
-  local YELLOW="\e[38;5;3m"
-  local NORMAL="\e(B\e[m"
-
   case $status in
-    ok)
-      echo -e "[${GREEN}OK${NORMAL}] $message"
-      ;;
-    error)
-      echo -e "[${RED}ERROR${NORMAL}] $message"
-      ;;
-    warning)
-      echo -e "[${YELLOW}WARNING${NORMAL}] $message"
-      ;;
+    ok) echo -e "[${GREEN}OK${NORMAL}] $message";;
+    error) echo -e "[${RED}ERROR${NORMAL}] $message";;
+    warning) echo -e "[${YELLOW}WARNING${NORMAL}] $message";;
+    debug) echo -e "[${CYAN}DEBUG${NORMAL}] $message";;
   esac
 }
 
 _die() {
   print_log error "$1"
-
-  exit 1
+  exit $FAIL
 }
 
 parse_theme() {
@@ -89,7 +92,11 @@ parse_theme() {
     eval ${VAR_PREFIX}${field_for_initialize}=${value}
     field_for_initialize=""
   done
+  [[ $DEBUG ]] &&
+    print_log debug "Theme is parsed.\n\t$theme"
 }
+
+RETURN_GET_VALUE=
 
 get_value() {
   # Get the field value from the theme file
@@ -97,8 +104,10 @@ get_value() {
   # $1        name_of_field
   #
   local name_of_variable=${VAR_PREFIX}${1}
-  echo ${!name_of_variable}
+  RETURN_GET_VALUE=${!name_of_variable}
 }
+
+RETURN_PARSE_TEMPLATE=
 
 parse_template() {
   # Get all matches from the
@@ -107,12 +116,17 @@ parse_template() {
   # $1        template file
   #
   local template=$1
+  if [[ ! -f $1 ]]; then
+    print_log error "Template $1 is not exist"
+    return 1
+  fi
   local matches=$( \
     egrep -o "\{\{([0-9a-zA-Z-]){1,}\}\}" $template)
-  matches=$( \
+  RETURN_PARSE_TEMPLATE=$( \
     echo $matches \
     | sed 's/[\{\}]//g')
-  echo $matches
+  [[ $DEBUG ]] &&
+    print_log debug "Template is parsed.\n\t$template"
 }
 
 insert_into_template() {
@@ -139,8 +153,14 @@ is_color() {
     echo $variable \
     | egrep -o "([0-9A-Fa-f]{6})")
 
-  [[ $variable == $variable_after_regex ]] && echo "1"
+  if [[ $variable == $variable_after_regex ]]; then
+    return $OK
+  else
+    return $FAIL
+  fi
 }
+
+RETURN_GET_COLOR_BYTE=
 
 get_color_byte() {
   # $1            color
@@ -148,26 +168,32 @@ get_color_byte() {
   #               r|g|b
   #
   local color=$1
-  local color_type=$2
+  local color_type=${2:-}
 
   case $color_type in
-    r) echo $color | cut -c1-2;;
-    g) echo $color | cut -c3-4;;
-    b) echo $color | cut -c5-6;;
-    *) echo $color;;
+    r) RETURN_GET_COLOR_BYTE=${color:0:2};;
+    g) RETURN_GET_COLOR_BYTE=${color:2:2};;
+    b) RETURN_GET_COLOR_BYTE=${color:4:2};;
+    *) RETURN_GET_COLOR_BYTE=${color};;
   esac
 }
+
+RETURN_CONVERT_16_TO_10_BASE=
 
 convert_16_to_10_base() {
   # $1          number in 16 base
   #
   local number=$1
-  echo $(( 16#${number} ))
+  RETURN_CONVERT_16_TO_10_BASE=$(( 16#${number} ))
 }
 
+RETURN_FLOATING_POINT_DIVISION=
+
 floating_point_division() {
-  echo 0$(bc -l <<< "$1 / $2")
+  RETURN_FLOATING_POINT_DIVISION=0$(bc -l <<< "$1 / $2")
 }
+
+RETURN_GET_COLOR_VALUE=
 
 get_color_value() {
   # Echo value of color
@@ -192,30 +218,34 @@ get_color_value() {
     hex)
       case $mod in
         bgr)
-          echo -n "$(get_color_byte $color b)"
-          echo -n "$(get_color_byte $color g)"
-          echo -n "$(get_color_byte $color r)"
+          RETURN_GET_COLOR_VALUE=""
+          for $byte in {b,g,r}; do
+            get_color_byte $color $byte
+            RETURN_GET_COLOR_VALUE+="${RETURN_GET_COLOR_BYTE}"
+          done
           ;;
         "r"|"b"|"g"|"")
-          echo "$(get_color_byte $color $mod)"
+          get_color_byte $color $mod
+          RETURN_GET_COLOR_VALUE="$RETURN_GET_COLOR_BYTE"
           ;;
       esac
       ;;
     rgb)
       case $mod in
         "r"|"b"|"g")
-          echo "$(convert_16_to_10_base \
-            $(get_color_byte $color $mod))"
+          get_color_byte $color $mod
+          convert_16_to_10_base $RETURN_GET_COLOR_BYTE
+          RETURN_GET_COLOR_VALUE=$RETURN_CONVERT_16_TO_10_BASE
           ;;
       esac
       ;;
     dec)
       case $mod in
         "r"|"b"|"g")
-          echo "$(floating_point_division  \
-            $(convert_16_to_10_base \
-            $(get_color_byte $color $mod)) \
-            255)"
+          get_color_byte $color $mod
+          convert_16_to_10_base $RETURN_GET_COLOR_BYTE
+          floating_point_division $RETURN_GET_COLOR_BYTE 255
+          RETURN_GET_COLOR_VALUE=$RETURN_FLOATING_POINT_DIVISION
         ;;
       esac
       ;;
@@ -225,103 +255,95 @@ get_color_value() {
 build_template() {
   #
   # $1        path to template
-  # $2        output file
   #
-
   template=$1
-  output_file=$2
 
-  cp "$template" "$output_file"
+  cp "$template" "$CACHE_PATH/$(basename $template)"
 
-  for match in $(parse_template $template); do
+  parse_template $template
+  for match in $RETURN_PARSE_TEMPLATE; do
     match_field=$(echo $match | egrep -o '^[^\-]*')
     match_mod=$(echo $match | sed s/$match_field-//g)
 
-    value=$(get_value $match_field)
+    get_value $match_field
+    value=$RETURN_GET_VALUE
 
-    [[ $(is_color $value) ]] &&
+    is_color $value &&
       [[ $match_mod != "" ]] &&
-        value=$(get_color_value $value $match_mod)
+        get_color_value $value $match_mod &&
+          value=$RETURN_GET_COLOR_VALUE
 
-    insert_into_template "{$match}" "$value" $output_file
+    insert_into_template \
+      "{$match}" \
+      "$value" \
+      "$CACHE_PATH/$(basename $template)"
   done
 }
 
 build_all_templates() {
-  #
-  # $1        theme name
-  #
-  THEME=$1
-  parse_theme $THEMES_PATH/$THEME.$THEME_EXT
-
-  mkdir -p $CACHE_PATH
+  [[ $DEBUG ]] &&
+    print_log debug "Building is started"
 
   for template in $TEMPLATE_PATH/*; do
-    build_template $template "$CACHE_PATH/$(basename $template)"
+    build_template $template
   done
+}
+
+does_the_theme_exist() {
+  THEME_PATH="${THEMES_PATH}/${THEME}.${THEME_EXT}"
+  if [[ -s $THEME_PATH ]]; then
+    return $OK
+  else
+    return $FAIL
+  fi
 }
 
 apply_theme() {
   xrdb -merge -quiet $CACHE_PATH/colors.Xresources
-  ($CACHE_PATH/tty.sh &)
+  $CACHE_PATH/tty.sh &
   print_log ok "The theme applied"
 }
 
 parse_arguments() {
+  [[ $# == 0 ]] && HELP=$OK
+
   while (( "$#" )); do
     case "$1" in
-      -t|--theme)
-        THEME=$2
-        shift 2
-        ;;
-      --no-apply)
-        NO_APPLY=1
-        shift 1
-        ;;
-      --reload)
-        RELOAD=0
-        shift 1
-        ;;
-      --after)
-        AFTER=$2
-        shift 2
-        ;;
-      --help)
-        HELP=0
-        shift 1
-        ;;
-      --)
-        shift
-        break;;
-      -*|--*=)
-        usage && _die "Unsupported flag $1"
-        ;;
-      *)
-        shift;;
+      -t|--theme) THEME=$2; shift 2;;
+      --no-apply) NO_APPLY=$OK; shift 1;;
+      --reload) RELOAD=$OK; shift 1;;
+      --after) AFTER=$2; shift 2;;
+      --help) HELP=$OK; shift 1;;
+      --debug) DEBUG=$OK; shift 1;;
+      --) shift; break;;
+      -*|--*=) usage && _die "Unsupported flag $1";;
+      *) shift;;
     esac
   done
 }
 
-parse_arguments $@
-
-if [ "${HELP}" ]; then
-  usage
-  exit 0
-fi
-
-if [ "${THEME}" ]; then
-  [ -s "${THEMES_PATH}/${THEME}.${THEME_EXT}" ] ||
-    _die "This theme is not exist"
-  build_all_templates $THEME
-  if [ -z "${NO_APPLY}" ]; then
-    apply_theme
+main() {
+  if [[ -v HELP ]]; then
+    usage
+    exit 0
   fi
-fi
 
-if [ "${RELOAD}" ]; then
-  apply_theme
-fi
+  if [[ -v THEME ]]; then
+    ! does_the_theme_exist &&
+      _die "This theme is not exist"
+    parse_theme $THEME_PATH
+    mkdir -p $CACHE_PATH
+    build_all_templates
 
-if [ "${AFTER}" ]; then
-  $AFTER
-fi
+    if [ -v NO_APPLY ]; then
+      apply_theme
+    fi
+  fi
+
+  if [ -v AFTER ]; then
+    $AFTER
+  fi
+}
+
+parse_arguments ${@}
+main
