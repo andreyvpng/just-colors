@@ -92,8 +92,10 @@ parse_theme() {
     eval ${VAR_PREFIX}${field_for_initialize}=${value}
     field_for_initialize=""
   done
-  [[ $DEBUG ]] &&
+
+  if [[ $DEBUG == $OK ]]; then
     print_log debug "Theme is parsed.\n\t$theme"
+  fi
 }
 
 RETURN_GET_VALUE=
@@ -125,8 +127,10 @@ parse_template() {
   RETURN_PARSE_TEMPLATE=$( \
     echo $matches \
     | sed 's/[\{\}]//g')
-  [[ $DEBUG ]] &&
+
+  if [[ $DEBUG == $OK ]]; then
     print_log debug "Template is parsed.\n\t$template"
+  fi
 }
 
 insert_into_template() {
@@ -281,8 +285,9 @@ build_template() {
 }
 
 build_all_templates() {
-  [[ $DEBUG ]] &&
+  if [[ $DEBUG == $OK ]]; then
     print_log debug "Building is started"
+  fi
 
   for template in $TEMPLATE_PATH/*; do
     build_template $template
