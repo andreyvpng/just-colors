@@ -3,6 +3,8 @@ Just-Colors
 
 [![made-with-bash](https://img.shields.io/badge/Made%20with-Bash-1f425f.svg)](https://www.gnu.org/software/bash/)
 
+[![Build Status](https://travis-ci.com/andreyvpng/just-colors.svg?branch=master)](https://travis-ci.com/andreyvpng/just-colors)
+
 Just Colors is easy and flexible way to create themes for all programms using built-in or custom color scheme. [See wiki for details](https://github.com/andreyvpng/just-colors/wiki/Usage)
 
 # Features
