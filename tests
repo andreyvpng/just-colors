@@ -3,6 +3,7 @@
 source ./just-colors > /dev/null
 
 PATH_PREFIX="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+echo $PATH_PREFIX
 
 TOTAL_TESTS=0
 PASSED_TESTS=0
