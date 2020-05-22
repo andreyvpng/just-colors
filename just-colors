@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-set -o nounset
-set -o errexit
+#set -o nounset
+#set -o errexit
 
 readonly PATH_PREFIX=$HOME/.config/just-colors
 readonly CACHE_PATH=$PATH_PREFIX/cache
@@ -261,8 +261,9 @@ build_template() {
   # $1        path to template
   #
   template=$1
+  cache=$2
 
-  cp "$template" "$CACHE_PATH/$(basename $template)"
+  cp "$template" $cache
 
   parse_template $template
   for match in $RETURN_PARSE_TEMPLATE; do
@@ -280,7 +281,7 @@ build_template() {
     insert_into_template \
       "{$match}" \
       "$value" \
-      "$CACHE_PATH/$(basename $template)"
+      "$cache"
   done
 }
 
@@ -290,7 +291,7 @@ build_all_templates() {
   fi
 
   for template in $TEMPLATE_PATH/*; do
-    build_template $template
+    build_template $template "$CACHE_PATH/$(basename $template)"
   done
 }
 
@@ -337,7 +338,7 @@ parse_arguments() {
 main() {
   if [[ -v HELP ]]; then
     usage
-    exit 0
+    return 0
   fi
 
   if [[ -v THEME ]]; then
