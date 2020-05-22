@@ -13,13 +13,16 @@ PATH_TEMPLATES_FOR_TEST=$PATH_PREFIX/templates_for_test
 
 assert() {
   TOTAL_TESTS=`expr $TOTAL_TESTS + 1`
+  arg_1=$1
+  arg_2=$2
+  message=$3
   case $# in
-    2)
-      if [[ $1 == $2 ]]; then 
-        print_log ok
+    3)
+      if [[ $arg_1 == $arg_2 ]]; then
+        print_log ok $message
         PASSED_TESTS=`expr $PASSED_TESTS + 1`
       else
-        print_log error "$1 and $2 is not equal"
+        print_log error "$arg_1 and $arg_2 is not equal"
       fi;;
   esac
 }
@@ -48,10 +51,10 @@ base0F="a16946"
 
 test_parse_theme_get_value() {
   parse_theme $THEMES_PATH/default-dark.$THEME_EXT
-  for number in $(echo {1..9} {A..F}); do
+  for number in $(echo {0..9} {A..F}); do
     name_of_var="base0${number}"
     get_value ${name_of_var}
-    assert $RETURN_GET_VALUE ${!name_of_var}
+    assert "$RETURN_GET_VALUE" "${!name_of_var}" "$name_of_var"
   done
 }
 
@@ -60,7 +63,7 @@ test_build_template() {
     solution=${template%.template}.solution
     cache=${template%.template}.cache
     build_template $template $cache
-    assert "$(diff $solution $cache)" ""
+    assert "$(diff $solution $cache)" "" "$template"
   done
 }
 
