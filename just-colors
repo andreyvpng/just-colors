@@ -305,8 +305,15 @@ does_the_theme_exist() {
 
 apply_theme() {
   xrdb -merge -quiet $CACHE_PATH/colors.Xresources
-  $CACHE_PATH/tty.sh &
+  $CACHE_PATH/tty.sh
   print_log ok "The theme applied"
+}
+
+print_colorscheme() {
+  for i in {40..47}; do
+    color="\033[${i}m"
+    echo -en "$color  "
+  done
 }
 
 parse_arguments() {
@@ -340,8 +347,9 @@ main() {
     mkdir -p $CACHE_PATH
     build_all_templates
 
-    if [ -v NO_APPLY ]; then
+    if ! [ -v NO_APPLY ]; then
       apply_theme
+      print_colorscheme
     fi
   fi
 
