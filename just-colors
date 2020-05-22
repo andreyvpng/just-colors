@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 
-#set -o nounset
-#set -o errexit
+set -o nounset
+set -o errexit
 
-readonly PATH_PREFIX=$HOME/.config/just-colors
-readonly CACHE_PATH=$PATH_PREFIX/cache
-readonly TEMPLATE_PATH=$PATH_PREFIX/templates
-readonly THEMES_PATH=$PATH_PREFIX/themes
-readonly THEME_EXT=yaml
-readonly VAR_PREFIX=TEMPLATE_VAR_
-readonly OK=0
-readonly FAIL=1
+PATH_PREFIX=$HOME/.config/just-colors
+CACHE_PATH=$PATH_PREFIX/cache
+TEMPLATE_PATH=$PATH_PREFIX/templates
+THEMES_PATH=$PATH_PREFIX/themes
+THEME_EXT=yaml
+VAR_PREFIX=TEMPLATE_VAR_
+OK=0
+FAIL=1
 
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[0;33m'
-readonly CYAN='\033[0;36m'
-readonly NORMAL='\033[0m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NORMAL='\033[0m'
 
 THEME_PATH=
 DEBUG=$FAIL
@@ -42,7 +42,7 @@ print_log() {
   # $2          message
   #
   local status=$1
-  local message=$2
+  local message=${2:-}
 
   case $status in
     ok) echo -e "[${GREEN}OK${NORMAL}] $message";;

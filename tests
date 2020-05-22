@@ -2,6 +2,8 @@
 
 source ./just-colors > /dev/null
 
+PATH_PREFIX="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
 TOTAL_TESTS=0
 PASSED_TESTS=0
 PATH_TEMPLATES_FOR_TEST=$PATH_PREFIX/templates_for_test
@@ -67,8 +69,12 @@ test_all() {
 }
 
 test_all
-
 clean_up
 
 echo Total tests: $TOTAL_TESTS
 echo Passed tests: $PASSED_TESTS
+
+if [[ $TOTAL_TESTS == $PASSED_TESTS ]]; then
+  exit 0
+fi
+exit 1
